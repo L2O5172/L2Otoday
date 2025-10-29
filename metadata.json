@@ -1,0 +1,5 @@
+{
+  "name": "L2Otoday",
+  "description": "A quick ordering web application for a Taiwanese snack shop, integrated with LINE for user authentication and order confirmation, allowing users to browse the menu, place orders for pickup or delivery, and track order status.",
+  "requestFramePermissions": []
+}
