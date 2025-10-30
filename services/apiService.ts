@@ -1,9 +1,9 @@
-import { API_ENDPOINT, DEFAULT_MENU } from '../constants';
-import { MenuItem, OrderData, OrderStatus } from '../types';
 
-async function request(payload: object) {
+import { API_ENDPOINT, DEFAULT_MENU } from '../constants';
+import { MenuItemType, OrderData, HistoricalOrder, StatusType } from '../types';
+
+async function request(payload: object): Promise<any> {
     try {
-        console.log('發送請求:', (payload as { action: string }).action);
         const response = await fetch(API_ENDPOINT, {
             method: 'POST',
             headers: {
@@ -17,7 +17,6 @@ async function request(payload: object) {
         }
 
         const result = await response.json();
-        console.log('收到回應:', result);
         return result;
     } catch (error) {
         console.error('API 請求失敗:', error);
@@ -25,58 +24,96 @@ async function request(payload: object) {
     }
 }
 
-export const getMenu = async (): Promise<MenuItem[]> => {
-    try {
-        const result = await request({ action: 'getMenu' });
-        if (result.success && Array.isArray(result.data)) {
-            return result.data;
+export const apiService = {
+    async getMenu(): Promise<MenuItemType[]> {
+        try {
+            const result = await request({ action: 'getMenu' });
+            if (result.success && Array.isArray(result.data)) {
+                return result.data;
+            }
+            return DEFAULT_MENU;
+        } catch (error) {
+            console.warn('獲取菜單失敗，使用默認菜單:', error);
+            return DEFAULT_MENU;
         }
-        return DEFAULT_MENU;
-    } catch (error) {
-        console.warn('獲取菜單失敗，使用默認菜單:', error);
-        return DEFAULT_MENU;
+    },
+
+    async submitOrder(orderData: OrderData, idToken: string | null): Promise<any> {
+        const orderDataForServer = {
+            customerName: orderData.customerName.trim(),
+            customerPhone: orderData.customerPhone.trim(),
+            items: orderData.items.map(item => ({
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price
+            })),
+            pickupTime: orderData.pickupTime,
+            deliveryAddress: orderData.deliveryAddress.trim(),
+            notes: orderData.notes.trim(),
+            status: 'pending'
+        };
+
+        const result = await request({
+            action: 'createOrder',
+            idToken: idToken,
+            orderData: orderDataForServer
+        });
+
+        if (!result.success) {
+            throw new Error(result.message || '訂單提交失敗');
+        }
+
+        return result;
+    },
+
+    async getOrders(params: { customerPhone: string; customerName: string; startDate: string; endDate: string; }): Promise<HistoricalOrder[]> {
+        const searchParams = {
+            customerPhone: params.customerPhone ? params.customerPhone.trim() : '',
+            customerName: params.customerName ? params.customerName.trim() : '',
+            startDate: params.startDate,
+            endDate: params.endDate,
+            exactMatch: true
+        };
+
+        const result = await request({
+            action: 'getOrders',
+            ...searchParams
+        });
+
+        if (!result.success) {
+            throw new Error(result.message || '查詢失敗');
+        }
+
+        const orders: any[] = result.data || [];
+
+        // When data is retrieved from backends like Google Apps Script, complex objects (arrays)
+        // might be returned as JSON strings. We need to parse them to prevent runtime errors.
+        return orders.map(order => {
+            let items = order.items;
+
+            if (typeof items === 'string') {
+                try {
+                    const parsedItems = JSON.parse(items);
+                    if (Array.isArray(parsedItems)) {
+                        items = parsedItems;
+                    } else {
+                        // If parsed data is not an array, default to an empty one.
+                        items = [];
+                    }
+                } catch (e) {
+                    console.error(`Failed to parse items for order ${order.orderId}:`, e);
+                    // If parsing fails, use an empty array to prevent crashing the UI.
+                    items = [];
+                }
+            }
+            
+            // Final safeguard to ensure items is always an array.
+            if (!Array.isArray(items)) {
+                console.warn(`Order ${order.orderId} has non-array items:`, items);
+                items = [];
+            }
+
+            return { ...order, items };
+        });
     }
-};
-
-export const submitOrder = async (orderData: OrderData, idToken: string | null) => {
-    const orderDataForServer = {
-        customerName: orderData.customerName.trim(),
-        customerPhone: orderData.customerPhone.trim(),
-        items: orderData.items.map(item => ({
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price
-        })),
-        pickupTime: orderData.pickupTime,
-        deliveryAddress: orderData.deliveryAddress.trim(),
-        notes: orderData.notes.trim(),
-        status: 'pending'
-    };
-
-    console.log('提交訂單數據:', orderDataForServer);
-
-    const result = await request({
-        action: 'createOrder',
-        idToken: idToken,
-        orderData: orderDataForServer
-    });
-
-    if (!result.success) {
-        throw new Error(result.message || '訂單提交失敗');
-    }
-
-    return result;
-};
-
-export const checkOrderStatus = async (orderId: string): Promise<{ status: OrderStatus }> => {
-    const result = await request({
-        action: 'checkOrderStatus',
-        orderId: orderId
-    });
-
-    if (!result.success) {
-        throw new Error(result.message || '查詢狀態失敗');
-    }
-
-    return result.data;
 };

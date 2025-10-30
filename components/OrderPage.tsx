@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { MenuItem as MenuItemType, CartItem, OrderData, NotificationType } from '../types';
 import { useLiff } from '../hooks/useLiff';
+import { MenuItemType, CartItem, OrderData, NotificationType } from '../types';
 import { DELIVERY_FEE } from '../constants';
-import MenuItem from './MenuItem';
 import LoadingSpinner from './LoadingSpinner';
+import MenuItem from './MenuItem';
 
 interface OrderPageProps {
     menuItems: MenuItemType[];
     onSubmitOrder: (orderData: OrderData, idToken: string | null) => Promise<void>;
     showNotification: (message: string, type?: NotificationType) => void;
+    onViewHistory: () => void;
+    onViewImage: (imageUrl: string) => void;
 }
 
-const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNotification }) => {
-    const { profile, idToken } = useLiff();
+const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNotification, onViewHistory, onViewImage }) => {
+    const { profile, idToken, liffStatus, statusType } = useLiff();
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [customerName, setCustomerName] = useState('');
@@ -30,9 +32,17 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
         setPickupDate(today);
         
         now.setMinutes(now.getMinutes() + 30);
-        const minutes = Math.ceil(now.getMinutes() / 15) * 15; // Round up to nearest 15 mins
-        now.setMinutes(minutes);
-        const timeString = now.toTimeString().slice(0, 5);
+        const hours = now.getHours();
+        let minutes = now.getMinutes();
+
+        if (minutes > 0 && minutes < 30) {
+            minutes = 30;
+        } else if (minutes > 30) {
+            minutes = 0;
+            now.setHours(hours + 1);
+        }
+
+        const timeString = `${now.getHours().toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
         setPickupTime(timeString);
     }, []);
 
@@ -73,13 +83,17 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
         });
     };
 
-    const getItemQuantity = (itemName: string) => cart.find(item => item.name === itemName)?.quantity || 0;
-
-    const clearCart = () => {
-        if (window.confirm('確定要清空購物車嗎？')) setCart([]);
+    const getItemQuantity = (itemName: string) => {
+        return cart.find(item => item.name === itemName)?.quantity || 0;
     };
 
-    const dateOptions = useMemo(() => {
+    const clearCart = () => {
+        if (window.confirm('確定要清空購物車嗎？')) {
+            setCart([]);
+        }
+    };
+
+    const getDateOptions = () => {
         const dates = [];
         const today = new Date();
         for (let i = 0; i < 7; i++) {
@@ -91,19 +105,22 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
             });
         }
         return dates;
-    }, []);
+    };
 
-    const timeOptions = useMemo(() => {
+    const getTimeOptions = () => {
         const times = [];
         for (let hour = 10; hour <= 21; hour++) {
             for (let minute = 0; minute < 60; minute += 30) {
+                if(hour === 21 && minute > 0) continue;
                 times.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
             }
         }
         return times;
-    }, []);
+    };
 
-    const getFullPickupTime = () => pickupDate && pickupTime ? `${pickupDate}T${pickupTime}` : '';
+    const getFullPickupTime = () => {
+        return pickupDate && pickupTime ? `${pickupDate}T${pickupTime}:00` : '';
+    };
 
     const validateForm = () => {
         let isValid = true;
@@ -157,51 +174,64 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
         }
     };
 
+    const statusClasses: Record<NotificationType, string> = { 
+        info: 'bg-blue-100 border-blue-400 text-blue-800', 
+        success: 'bg-green-100 border-green-400 text-green-800', 
+        warning: 'bg-yellow-100 border-yellow-400 text-yellow-800', 
+        error: 'bg-red-100 border-red-400 text-red-800' 
+    };
+
+    const dateOptions = getDateOptions();
+    const timeOptions = getTimeOptions();
+
     return (
-        <div className="animate-fade-in space-y-4">
-            <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">姓名 <span className="text-red-500">*</span></label>
-                <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="請輸入姓名" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500" />
-            </div>
+        <div className="animate-fade-in">
+            <div className={`p-3 rounded-lg text-sm text-center border ${statusClasses[statusType]}`}>{liffStatus}</div>
             
-            <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">手機號碼 <span className="text-red-500">*</span></label>
-                <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="0936220000" className={`w-full p-3 border rounded-lg text-sm focus:ring-green-500 focus:border-green-500 ${phoneError ? 'border-red-500' : 'border-gray-300'}`} />
-                {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
-                <p className="text-xs text-gray-500 mt-1">請輸入09開頭的10位手機號碼</p>
-            </div>
+            <button onClick={onViewHistory} className="w-full text-center p-2.5 border border-blue-500 text-blue-600 rounded-md text-sm hover:bg-blue-500 hover:text-white transition-colors duration-200 mt-4 clickable-btn">
+                🕒 查詢歷史訂單
+            </button>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4 mt-4">
+                 <div>
+                    <label className="block mb-2 font-bold text-gray-700 text-sm">姓名 <span className="text-red-500">*</span></label>
+                    <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="自動帶入 LINE 名稱" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500" />
+                </div>
+                <div>
+                    <label className="block mb-2 font-bold text-gray-700 text-sm">手機號碼 <span className="text-red-500">*</span></label>
+                    <input type="tel" value={customerPhone} onChange={(e) => setCustomerPhone(e.target.value)} placeholder="0936220000" className={`w-full p-3 border rounded-lg text-sm focus:ring-green-500 focus:border-green-500 ${phoneError ? 'border-red-500' : 'border-gray-300'}`} />
+                    {phoneError && <p className="text-red-500 text-xs mt-1">{phoneError}</p>}
+                </div>
                 <div>
                     <label className="block mb-2 font-bold text-gray-700 text-sm">取餐日期 <span className="text-red-500">*</span></label>
                     <select value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500">
-                        {dateOptions.map(date => <option key={date.value} value={date.value}>{date.label}</option>)}
+                        <option value="">請選擇取餐日期</option>
+                        {dateOptions.map(date => (<option key={date.value} value={date.value}>{date.label}</option>))}
                     </select>
                 </div>
                 <div>
                     <label className="block mb-2 font-bold text-gray-700 text-sm">取餐時間 <span className="text-red-500">*</span></label>
                     <select value={pickupTime} onChange={(e) => setPickupTime(e.target.value)} className={`w-full p-3 border rounded-lg text-sm focus:ring-green-500 focus:border-green-500 ${timeError ? 'border-red-500' : 'border-gray-300'}`}>
-                        {timeOptions.map(time => <option key={time} value={time}>{time}</option>)}
+                        <option value="">請選擇取餐時間</option>
+                        {timeOptions.map(time => (<option key={time} value={time}>{time}</option>))}
                     </select>
+                    {timeError && <p className="text-red-500 text-xs mt-1">{timeError}</p>}
                 </div>
-            </div>
-            {timeError && <p className="text-red-500 text-xs -mt-3">{timeError}</p>}
-            
-            <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">外送地點 (選填)</label>
-                <input type="text" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} placeholder="如需外送請填寫地址" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500" />
-                <p className="text-xs text-gray-500 mt-1">※ 填寫地址將計算 ${DELIVERY_FEE} 元外送費</p>
-            </div>
-            
-            <div>
-                <label className="block mb-2 font-bold text-gray-700 text-sm">備註 (選填)</label>
-                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="例如：不要香菜、加辣等" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500" />
+                <div>
+                    <label className="block mb-2 font-bold text-gray-700 text-sm">外送地點 (選填)</label>
+                    <input type="text" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} placeholder="如需外送請填寫地址" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500" />
+                    <p className="text-xs text-gray-500 mt-1">※ 填寫地址將計算 ${DELIVERY_FEE} 元外送費</p>
+                </div>
+                <div>
+                    <label className="block mb-2 font-bold text-gray-700 text-sm">備註 (選填)</label>
+                    <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} placeholder="例如：不要香菜、加辣等" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500" />
+                </div>
             </div>
             
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-4">
                 <h2 className="text-center text-lg font-bold text-gray-800 mb-4">📝 選擇餐點</h2>
                 <div className="space-y-3">
-                    {menuItems.map(item => <MenuItem key={item.name} item={item} cartQuantity={getItemQuantity(item.name)} onUpdateCart={updateCart} />)}
+                    {menuItems.map(item => (<MenuItem key={item.name} item={item} cartQuantity={getItemQuantity(item.name)} onUpdateCart={updateCart} onViewImage={onViewImage} />))}
                 </div>
             </div>
 
@@ -227,17 +257,17 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
             
             <div className="bg-green-50 p-4 rounded-lg border border-green-200 space-y-2 mt-4">
                 <div className="flex justify-between text-sm text-gray-600"><span>餐點總計:</span><span>${subtotal}</span></div>
-                {deliveryFee > 0 && <div className="flex justify-between text-sm text-gray-600"><span>外送費:</span><span>${deliveryFee}</span></div>}
+                {deliveryFee > 0 && (<div className="flex justify-between text-sm text-gray-600"><span>外送費:</span><span>${deliveryFee}</span></div>)}
                 <div className="flex justify-between font-bold text-lg text-gray-800 border-t border-gray-300 pt-3 mt-3"><span>總金額:</span><span>${totalAmount}</span></div>
             </div>
-
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200 text-center">
-                <p className="text-sm text-blue-800"><span className="font-bold">📨 重要提醒：</span><br/>下單後請分享確認信給店家，待店家回覆確認後訂單才成立</p>
+            
+            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800 text-center"><span className="font-bold">🚀 一鍵完成：</span><br/>下單後只需點擊一次，自動加入店家LINE並發送確認信</p>
             </div>
             
             <div className="mt-6">
                 <button onClick={handleSubmit} disabled={cart.length === 0 || isLoading} className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center clickable-btn">
-                    {isLoading ? <><LoadingSpinner /><span>處理中...</span></> : <span>📨 送出訂單（待確認）</span>}
+                    {isLoading ? <><LoadingSpinner /><span>處理中...</span></> : <span>📨 送出訂單（一鍵確認）</span>}
                 </button>
             </div>
         </div>

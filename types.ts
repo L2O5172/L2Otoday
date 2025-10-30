@@ -1,4 +1,5 @@
-export interface MenuItem {
+
+export interface MenuItemType {
   name: string;
   price: number;
   icon: string;
@@ -6,7 +7,7 @@ export interface MenuItem {
   image: string;
 }
 
-export interface CartItem extends MenuItem {
+export interface CartItem extends MenuItemType {
   quantity: number;
 }
 
@@ -19,18 +20,31 @@ export interface OrderData {
   notes: string;
 }
 
-export interface SubmittedOrderData extends OrderData {
+export interface SubmittedOrder extends OrderData {
   orderId: string;
   totalAmount: number;
 }
 
-export interface LiffUserProfile {
+export interface LiffProfile {
   userId: string;
   displayName: string;
   pictureUrl?: string;
   statusMessage?: string;
 }
 
+export interface HistoricalOrder {
+    orderId: string;
+    customerName: string;
+    customerPhone: string;
+    items: { name: string; quantity: number; price: number }[];
+    pickupTime: string;
+    deliveryAddress: string;
+    notes: string;
+    status: 'pending' | 'confirmed' | 'cancelled';
+    totalAmount: number;
+    createdAt: string;
+}
+
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';
 
-export type OrderStatus = 'pending' | 'confirmed' | 'cancelled';
+export type StatusType = 'pending' | 'confirmed' | 'cancelled';
