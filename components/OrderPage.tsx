@@ -230,7 +230,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
             
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mt-4">
                 <h2 className="text-center text-lg font-bold text-gray-800 mb-4">📝 選擇餐點</h2>
-                <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
                     {menuItems.map(item => (<MenuItem key={item.name} item={item} cartQuantity={getItemQuantity(item.name)} onUpdateCart={updateCart} onViewImage={onViewImage} />))}
                 </div>
             </div>
