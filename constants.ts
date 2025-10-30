@@ -1,7 +1,7 @@
 import { MenuItemType } from './types';
 
 export const LIFF_ID = '2008316489-6nMjb0KX';
-export const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxkiCWJjuew-82ewrIgCCVctbpIIyalrCMfJBwg5tjrfXIG2cIisG9dynjJBAFocIMP/exec';
+export const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbx4NRaLIm_5iurGkSUkbYdwhZ0PfDFyf3LBpKeuxtYKays6_cXy9EvlTn6poDNeGelx/exec';
 export const DELIVERY_FEE = 30;
 export const STORE_LINE_ID = '@561zotgq';
 
