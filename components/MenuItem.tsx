@@ -10,46 +10,46 @@ interface MenuItemProps {
 
 const MenuItem: React.FC<MenuItemProps> = ({ item, cartQuantity, onUpdateCart, onViewImage }) => {
     return (
-        <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center gap-3">
-                <div 
-                    className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden cursor-pointer group"
-                    onClick={() => onViewImage(item.image)}
-                >
-                    <img 
-                        src={item.image} 
-                        alt={item.name} 
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
-                    />
+        <div className="bg-white rounded-lg p-2 border border-gray-200 shadow-sm flex flex-col h-full">
+            <div 
+                className="w-full h-20 rounded-md overflow-hidden cursor-pointer group relative"
+                onClick={() => onViewImage(item.image)}
+            >
+                <img 
+                    src={item.image} 
+                    alt={item.name} 
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110" 
+                />
+                <span className="absolute top-1 right-1 text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-green-800 bg-opacity-80 backdrop-blur-sm">
+                    {item.status}
+                </span>
+            </div>
+            
+            <div className="flex-1 flex flex-col pt-2">
+                <div className="flex-1 mb-2">
+                    <h3 className="font-bold text-gray-800 text-sm leading-tight">{item.icon} {item.name}</h3>
+                    <p className="text-green-600 font-bold text-sm">${item.price}</p>
                 </div>
                 
-                <div className="flex-1">
-                    <div className="flex justify-between items-start mb-2">
-                        <div>
-                            <h3 className="font-bold text-gray-800 text-sm">{item.icon} {item.name}</h3>
-                            <p className="text-green-600 font-bold text-sm">${item.price}</p>
-                        </div>
-                        <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800">
-                            {item.status}
-                        </span>
-                    </div>
+                <div className="flex items-center justify-between mt-auto">
+                     <button
+                        onClick={() => onUpdateCart(item.name, -1)}
+                        disabled={cartQuantity === 0}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-white font-bold text-lg clickable-btn ${
+                            cartQuantity === 0 ? 'bg-gray-400 cursor-not-allowed opacity-50' : 'bg-red-500 hover:bg-red-600'
+                        }`}
+                        aria-label={`減少${item.name}數量`}
+                    >-</button>
                     
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => onUpdateCart(item.name, -1)}
-                            disabled={cartQuantity === 0}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold clickable-btn ${
-                                cartQuantity === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-500 hover:bg-red-600'
-                            }`}
-                        >-</button>
-                        
-                        <span className="min-w-[2rem] text-center font-bold text-lg">{cartQuantity}</span>
-                        
-                        <button
-                            onClick={() => onUpdateCart(item.name, 1)}
-                            className="w-8 h-8 rounded-full bg-green-500 text-white font-bold hover:bg-green-600 clickable-btn"
-                        >+</button>
-                    </div>
+                    <span className="min-w-[2rem] text-center font-bold text-base" aria-live="polite">
+                        {cartQuantity > 0 ? cartQuantity : ''}
+                    </span>
+
+                    <button
+                        onClick={() => onUpdateCart(item.name, 1)}
+                        className="w-7 h-7 rounded-full bg-green-500 text-white font-bold text-lg hover:bg-green-600 clickable-btn"
+                        aria-label={`增加${item.name}數量`}
+                    >+</button>
                 </div>
             </div>
         </div>
