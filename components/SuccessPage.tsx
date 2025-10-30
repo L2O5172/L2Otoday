@@ -1,5 +1,6 @@
 import React from 'react';
 import { SubmittedOrder, NotificationType } from '../types';
+import { STORE_INFO } from '../constants';
 
 interface SuccessPageProps {
     orderData: SubmittedOrder;
@@ -14,7 +15,7 @@ const SuccessPage: React.FC<SuccessPageProps> = ({ orderData, onNewOrder, showNo
         .map(item => `• ${item.name} x ${item.quantity} = $${item.price * item.quantity}`)
         .join('\n');
 
-    const customerShareText = `🍽️ 台灣小吃店 - 訂單詳細資訊
+    const customerShareText = `🍽️ ${STORE_INFO.NAME} - 訂單詳細資訊
 
 📋 訂單編號：${orderData.orderId}
 👤 顧客姓名：${orderData.customerName}
@@ -28,9 +29,9 @@ ${itemsText}
 📍 ${orderData.deliveryAddress ? `外送地址：${orderData.deliveryAddress}` : '自取'}
 📝 備註：${orderData.notes || '無'}
 
-📍 取餐地址：台灣小吃店
-🕒 營業時間：10:00-21:00
-📞 店家電話：02-1234-5678`;
+📍 取餐地址：${STORE_INFO.ADDRESS}
+🕒 營業時間：${STORE_INFO.OPERATING_HOURS}
+📞 店家電話：${STORE_INFO.PHONE}`;
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(customerShareText)

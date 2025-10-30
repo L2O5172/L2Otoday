@@ -25,13 +25,6 @@ export interface SubmittedOrder extends OrderData {
   totalAmount: number;
 }
 
-export interface LiffProfile {
-  userId: string;
-  displayName: string;
-  pictureUrl?: string;
-  statusMessage?: string;
-}
-
 export interface HistoricalOrder {
     orderId: string;
     customerName: string;
@@ -43,6 +36,14 @@ export interface HistoricalOrder {
     status: 'pending' | 'confirmed' | 'cancelled';
     totalAmount: number;
     createdAt: string;
+}
+
+// FIX: Added LiffProfile interface to resolve missing module member error.
+export interface LiffProfile {
+  userId: string;
+  displayName: string;
+  pictureUrl?: string;
+  statusMessage?: string;
 }
 
 export type NotificationType = 'success' | 'error' | 'warning' | 'info';

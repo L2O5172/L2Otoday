@@ -1,5 +1,4 @@
-
-import { API_ENDPOINT, DEFAULT_MENU } from '../constants';
+import { API_ENDPOINT, MENU_ITEMS } from '../constants';
 import { MenuItemType, OrderData, HistoricalOrder, StatusType } from '../types';
 
 async function request(payload: object): Promise<any> {
@@ -31,14 +30,14 @@ export const apiService = {
             if (result.success && Array.isArray(result.data)) {
                 return result.data;
             }
-            return DEFAULT_MENU;
+            return MENU_ITEMS;
         } catch (error) {
             console.warn('獲取菜單失敗，使用默認菜單:', error);
-            return DEFAULT_MENU;
+            return MENU_ITEMS;
         }
     },
 
-    async submitOrder(orderData: OrderData, idToken: string | null): Promise<any> {
+    async submitOrder(orderData: OrderData): Promise<any> {
         const orderDataForServer = {
             customerName: orderData.customerName.trim(),
             customerPhone: orderData.customerPhone.trim(),
@@ -55,7 +54,6 @@ export const apiService = {
 
         const result = await request({
             action: 'createOrder',
-            idToken: idToken,
             orderData: orderDataForServer
         });
 

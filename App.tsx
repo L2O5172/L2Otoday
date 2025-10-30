@@ -7,7 +7,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import ImageModal from './components/ImageModal';
 import { apiService } from './services/apiService';
 import { SubmittedOrder, OrderData, NotificationType, MenuItemType } from './types';
-import { DEFAULT_MENU, STORE_LINE_ID } from './constants';
+import { MENU_ITEMS, STORE_INFO, DELIVERY_FEE } from './constants';
 
 type View = 'order' | 'success' | 'history';
 
@@ -29,7 +29,7 @@ const App: React.FC = () => {
                 const items = await apiService.getMenu();
                 setMenuItems(items);
             } catch (error) {
-                setMenuItems(DEFAULT_MENU);
+                setMenuItems(MENU_ITEMS);
                 showNotification('菜單載入失敗，使用預設菜單', 'warning');
             } finally {
                 setIsMenuLoading(false);
@@ -39,10 +39,10 @@ const App: React.FC = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleSubmitOrder = async (orderData: OrderData, idToken: string | null) => {
+    const handleSubmitOrder = async (orderData: OrderData) => {
         try {
-            const result = await apiService.submitOrder(orderData, idToken);
-            const totalAmount = orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0) + (orderData.deliveryAddress ? 30 : 0);
+            const result = await apiService.submitOrder(orderData);
+            const totalAmount = orderData.items.reduce((sum, item) => sum + item.price * item.quantity, 0) + (orderData.deliveryAddress ? DELIVERY_FEE : 0);
 
             const finalOrderData: SubmittedOrder = {
                 ...orderData,
@@ -51,7 +51,7 @@ const App: React.FC = () => {
             };
             setSubmittedOrder(finalOrderData);
             setView('success');
-            showNotification('訂單已暫存！請發送確認信給店家', 'success');
+            showNotification('訂單已送出！請手動分享給店家', 'success');
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : '未知錯誤';
             showNotification(`訂單提交失敗：${errorMessage}`, 'error');
@@ -96,12 +96,12 @@ const App: React.FC = () => {
         <div className="p-4 min-h-screen flex items-center justify-center">
             <div className="container max-w-md mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden no-print">
                 <div className="bg-[#fff3cd] border-b border-[#ffeaa7] rounded-t-2xl p-2.5 text-xs text-center text-[#856404]">
-                    <span role="img" aria-label="lock">🔒</span> 安全訂餐系統 - 一鍵確認模式
+                    <span role="img" aria-label="lock">🔒</span> 安全訂餐系統
                 </div>
 
                 <header className="bg-green-500 text-white p-5 text-center relative">
-                    <h1 className="text-2xl font-bold mb-1">🍜 台灣小吃店</h1>
-                    <p className="text-sm opacity-90">LINE 快速訂餐 - 一鍵確認</p>
+                    <h1 className="text-2xl font-bold mb-1">🍜 {STORE_INFO.NAME}</h1>
+                    <p className="text-sm opacity-90">快速訂餐系統</p>
                 </header>
 
                 <main className="p-5">
@@ -109,8 +109,8 @@ const App: React.FC = () => {
                 </main>
                 
                 <footer className="bg-gray-100 p-4 text-center text-xs text-gray-500 border-t border-gray-200">
-                    <p>📍 營業時間: 10:00 - 21:00 | 📞 聯絡電話: 02-1234-5678</p>
-                    <p className="mt-1">💬 店家LINE: {STORE_LINE_ID} (一鍵加入並確認)</p>
+                    <p>📍 營業時間: {STORE_INFO.OPERATING_HOURS} | 📞 聯絡電話: {STORE_INFO.PHONE}</p>
+                    <p className="mt-1">💬 店家LINE: {STORE_INFO.LINE_ID}</p>
                 </footer>
             </div>
             <Notification

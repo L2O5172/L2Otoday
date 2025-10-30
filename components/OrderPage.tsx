@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLiff } from '../hooks/useLiff';
 import { MenuItemType, CartItem, OrderData, NotificationType } from '../types';
 import { DELIVERY_FEE } from '../constants';
 import LoadingSpinner from './LoadingSpinner';
@@ -7,14 +6,13 @@ import MenuItem from './MenuItem';
 
 interface OrderPageProps {
     menuItems: MenuItemType[];
-    onSubmitOrder: (orderData: OrderData, idToken: string | null) => Promise<void>;
+    onSubmitOrder: (orderData: OrderData) => Promise<void>;
     showNotification: (message: string, type?: NotificationType) => void;
     onViewHistory: () => void;
     onViewImage: (imageUrl: string) => void;
 }
 
 const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNotification, onViewHistory, onViewImage }) => {
-    const { profile, idToken, liffStatus, statusType } = useLiff();
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [customerName, setCustomerName] = useState('');
@@ -46,12 +44,6 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
         setPickupTime(timeString);
     }, []);
 
-    useEffect(() => {
-        if (profile?.displayName) {
-            setCustomerName(profile.displayName);
-        }
-    }, [profile]);
-
     const { subtotal, deliveryFee, totalAmount } = useMemo(() => {
         const sub = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
         const fee = deliveryAddress.trim() ? DELIVERY_FEE : 0;
@@ -65,6 +57,10 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
             if (existingIndex === -1) {
                 if (change > 0) {
                     const menuItem = menuItems.find(item => item.name === itemName);
+                    if (menuItem && menuItem.status !== '供應中') {
+                        showNotification(`${menuItem.name} 已售完，無法加入`, 'warning');
+                        return prevCart;
+                    }
                     return menuItem ? [...prevCart, { ...menuItem, quantity: 1 }] : prevCart;
                 }
                 return prevCart;
@@ -166,7 +162,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
                 pickupTime: getFullPickupTime(), 
                 deliveryAddress, 
                 notes 
-            }, idToken);
+            });
         } catch (error) {
             // Error is handled in the parent component
         } finally {
@@ -174,20 +170,11 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
         }
     };
 
-    const statusClasses: Record<NotificationType, string> = { 
-        info: 'bg-blue-100 border-blue-400 text-blue-800', 
-        success: 'bg-green-100 border-green-400 text-green-800', 
-        warning: 'bg-yellow-100 border-yellow-400 text-yellow-800', 
-        error: 'bg-red-100 border-red-400 text-red-800' 
-    };
-
     const dateOptions = getDateOptions();
     const timeOptions = getTimeOptions();
 
     return (
         <div className="animate-fade-in">
-            <div className={`p-3 rounded-lg text-sm text-center border ${statusClasses[statusType]}`}>{liffStatus}</div>
-            
             <button onClick={onViewHistory} className="w-full text-center p-2.5 border border-blue-500 text-blue-600 rounded-md text-sm hover:bg-blue-500 hover:text-white transition-colors duration-200 mt-4 clickable-btn">
                 🕒 查詢歷史訂單
             </button>
@@ -195,7 +182,7 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
             <div className="space-y-4 mt-4">
                  <div>
                     <label className="block mb-2 font-bold text-gray-700 text-sm">姓名 <span className="text-red-500">*</span></label>
-                    <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="自動帶入 LINE 名稱" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500" />
+                    <input type="text" value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="請輸入訂餐人姓名" className="w-full p-3 border border-gray-300 rounded-lg text-sm focus:ring-green-500 focus:border-green-500" />
                 </div>
                 <div>
                     <label className="block mb-2 font-bold text-gray-700 text-sm">手機號碼 <span className="text-red-500">*</span></label>
@@ -261,13 +248,9 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
                 <div className="flex justify-between font-bold text-lg text-gray-800 border-t border-gray-300 pt-3 mt-3"><span>總金額:</span><span>${totalAmount}</span></div>
             </div>
             
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-800 text-center"><span className="font-bold">🚀 一鍵完成：</span><br/>下單後只需點擊一次，自動加入店家LINE並發送確認信</p>
-            </div>
-            
             <div className="mt-6">
                 <button onClick={handleSubmit} disabled={cart.length === 0 || isLoading} className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center clickable-btn">
-                    {isLoading ? <><LoadingSpinner /><span>處理中...</span></> : <span>📨 送出訂單（一鍵確認）</span>}
+                    {isLoading ? <><LoadingSpinner /><span>處理中...</span></> : <span>📨 送出訂單</span>}
                 </button>
             </div>
         </div>
