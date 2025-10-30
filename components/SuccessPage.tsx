@@ -11,7 +11,7 @@ const SuccessPage: React.FC<SuccessPageProps> = ({ orderData, onNewOrder, showNo
     const formatDisplayTime = (timestamp: string) => new Date(timestamp).toLocaleString('zh-TW', { dateStyle: 'short', timeStyle: 'short' });
 
     const itemsText = orderData.items
-        .map(item => `- ${item.name} x ${item.quantity}`)
+        .map(item => `• ${item.name} x ${item.quantity} = $${item.price * item.quantity}`)
         .join('\n');
 
     const customerShareText = `🍽️ 台灣小吃店 - 訂單詳細資訊
