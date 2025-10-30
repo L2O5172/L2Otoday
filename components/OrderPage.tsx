@@ -26,13 +26,17 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
 
     useEffect(() => {
         const now = new Date();
+        
+        // 設定預設為 2 小時後
+        now.setHours(now.getHours() + 2);
+
         const today = now.toISOString().split('T')[0];
         setPickupDate(today);
         
-        now.setMinutes(now.getMinutes() + 30);
         const hours = now.getHours();
         let minutes = now.getMinutes();
 
+        // 向上取整到最近的半小時
         if (minutes > 0 && minutes < 30) {
             minutes = 30;
         } else if (minutes > 30) {
@@ -134,10 +138,11 @@ const OrderPage: React.FC<OrderPageProps> = ({ menuItems, onSubmitOrder, showNot
         } else {
             const selectedDateTime = new Date(getFullPickupTime());
             const minDateTime = new Date();
-            minDateTime.setMinutes(minDateTime.getMinutes() + 29);
+            // 驗證時間必須在 2 小時 (119 分鐘) 之後
+            minDateTime.setMinutes(minDateTime.getMinutes() + 119);
             
             if (selectedDateTime < minDateTime) {
-                setTimeError('取餐時間必須在30分鐘之後');
+                setTimeError('取餐時間必須在2小時之後');
                 isValid = false;
             }
         }
