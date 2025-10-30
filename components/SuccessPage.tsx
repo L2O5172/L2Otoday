@@ -10,7 +10,27 @@ interface SuccessPageProps {
 const SuccessPage: React.FC<SuccessPageProps> = ({ orderData, onNewOrder, showNotification }) => {
     const formatDisplayTime = (timestamp: string) => new Date(timestamp).toLocaleString('zh-TW', { dateStyle: 'short', timeStyle: 'short' });
 
-    const customerShareText = `🍽️ 台灣小吃店 - 訂單詳細資訊\n\n📋 訂單編號：${orderData.orderId}\n👤 顧客姓名：${orderData.customerName}\n📞 聯絡電話：${orderData.customerPhone}\n\n💰 總金額：$${orderData.totalAmount}\n⏰ 取餐時間：${formatDisplayTime(orderData.pickupTime)}\n📍 ${orderData.deliveryAddress ? `外送地址：${orderData.deliveryAddress}` : '自取'}\n📝 備註：${orderData.notes || '無'}\n\n📍 取餐地址：台灣小吃店\n🕒 營業時間：10:00-21:00\n📞 店家電話：02-1234-5678`;
+    const itemsText = orderData.items
+        .map(item => `- ${item.name} x ${item.quantity}`)
+        .join('\n');
+
+    const customerShareText = `🍽️ 台灣小吃店 - 訂單詳細資訊
+
+📋 訂單編號：${orderData.orderId}
+👤 顧客姓名：${orderData.customerName}
+📞 聯絡電話：${orderData.customerPhone}
+
+🛒 訂單內容：
+${itemsText}
+
+💰 總金額：$${orderData.totalAmount}
+⏰ 取餐時間：${formatDisplayTime(orderData.pickupTime)}
+📍 ${orderData.deliveryAddress ? `外送地址：${orderData.deliveryAddress}` : '自取'}
+📝 備註：${orderData.notes || '無'}
+
+📍 取餐地址：台灣小吃店
+🕒 營業時間：10:00-21:00
+📞 店家電話：02-1234-5678`;
 
     const copyToClipboard = () => {
         navigator.clipboard.writeText(customerShareText)
