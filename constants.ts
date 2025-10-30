@@ -23,7 +23,7 @@ export const STORE_INFO = {
  * Step 2: Fill in your Google Apps Script key
  */
 // 請到 Google Apps Script 部署您的後端程式，並將產生的網址貼在下方
-export const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyEywGguZWZ7ics0zl5PB4uqELPibqI1ZtHYm8NwFfMsNSArPbcOPzJhQOIeQa4t4uC/exec';
+export const API_ENDPOINT = 'https://script.google.com/macros/s/AKfycbw1KNnqX7QPfw5zTDkg3OmO0Q21qh24tV-6FcQPhb_ES70eZhDpFRNRW-TmXd_pWlgh/exec';
 
 // FIX: Added LIFF_ID export to resolve missing module member error.
 /**
